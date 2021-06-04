@@ -57,7 +57,25 @@ export const MenuItem = React.forwardRef<HTMLButtonElement, MenuItemProps>(
 export const NestedMenu = React.forwardRef<HTMLButtonElement, MenuItemProps>(
   (props, ref) => {
     const styles = useStyles()
-    return <ChakraMenuItem as="div" ref={ref} closeOnSelect={false} {...props} sx={styles.nestedMenu}/>;
+    const rrr = React.useRef<HTMLButtonElement | null>(null)
+
+    useEffect(() => {
+
+    }, [])
+
+    return <ChakraMenuItem as="div"
+      ref={(r) => {
+        ref && (typeof ref === "function" ? ref(r) : (ref.current = r))
+        rrr.current = r
+      }} closeOnSelect={false} {...props} sx={styles.nestedMenu} onFocus={() => {
+        if (rrr.current) {
+          // @ts-ignore
+          const shit = rrr.current.children[0].focus()
+
+        }
+        console.log('shit')
+        // shit.focus()
+    }}/>;
   }
 );
 
@@ -95,7 +113,13 @@ export const MenuButton = React.forwardRef<HTMLButtonElement, MenuButtonProps>(
       <ChakraMenuButton
         ref={ref}
         {...props}
-        onKeyDown={onKeyDown}
+        // onKeyDown={onKeyDown}
+        onKeyUp={() => {
+          console.log('shittttt')
+        }}
+        onKeyPress={() => {
+          console.log('shittttt             2222222222222222222222222222222')
+        }}
       />
     );
   }

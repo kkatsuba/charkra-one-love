@@ -1,4 +1,4 @@
-import { Box, Button, ChakraProvider, MenuList } from "@chakra-ui/react";
+import { Box, Button, ChakraProvider, MenuList, MenuButton as ChakraMenuButton } from "@chakra-ui/react";
 import * as React from "react";
 import { render } from "react-dom";
 
@@ -83,9 +83,9 @@ const NetworksMenu = React.forwardRef<HTMLButtonElement, {}>((props, ref) => {
 
 export const WithMenu = () => (
   <Menu>
-    <MenuButton as={Button}>
+    <ChakraMenuButton as={Button}>
       Open menu
-    </MenuButton>
+    </ChakraMenuButton>
     <MenuList>
       <MenuItem command="⌘T" onClick={() => console.log("newTab")}>
         New Tab
