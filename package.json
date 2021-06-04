@@ -6,6 +6,7 @@
   "main": "src/index.tsx",
   "dependencies": {
     "@chakra-ui/react": "latest",
+    "@chakra-ui/theme-tools": "^1.1.7",
     "@emotion/react": "latest",
     "@emotion/styled": "latest",
     "@types/react": "17.0.1",

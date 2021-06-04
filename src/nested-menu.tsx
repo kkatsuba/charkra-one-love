@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   MenuProps,
   MenuItemProps,
@@ -7,24 +7,24 @@ import {
   MenuButton as ChakraMenuButton,
   useMenuContext,
   MenuButtonProps,
-  useMenuDescendantsContext
+  useMenuDescendantsContext,
+  chakra,
+  useStyles,
 } from "@chakra-ui/react";
 
 console.clear();
 
-type NestedMenuContextProps = ReturnType<typeof useMenuContext> & {
-  descendants: ReturnType<typeof useMenuDescendantsContext>
-}
+type Descendants = ReturnType<typeof useMenuDescendantsContext>
+
+type NestedMenuContextProps = ReturnType<typeof useMenuContext>
 
 const NestedMenuContext = React.createContext<NestedMenuContextProps | undefined>(undefined);
 
 export const Menu: React.FC<MenuProps> = (props) => {
   const nestedMenuContext = React.useContext(NestedMenuContext);
   const parentMenuContext = useMenuContext();
-  const descendants = useMenuDescendantsContext()
   const context = (nestedMenuContext || parentMenuContext) && {
     ...parentMenuContext,
-    descendants,
     onClose: () => {
       nestedMenuContext && nestedMenuContext.onClose();
       parentMenuContext?.onClose();
@@ -56,27 +56,32 @@ export const MenuItem = React.forwardRef<HTMLButtonElement, MenuItemProps>(
 
 export const NestedMenu = React.forwardRef<HTMLButtonElement, MenuItemProps>(
   (props, ref) => {
-    return <ChakraMenuItem ref={ref} closeOnSelect={false} {...props} />;
+    const styles = useStyles()
+    return <ChakraMenuItem as="div" ref={ref} closeOnSelect={false} {...props} sx={styles.nestedMenu}/>;
   }
 );
 
 export const MenuButton = React.forwardRef<HTMLButtonElement, MenuButtonProps>(
   (props, ref) => {
-    const nestedMenuContext = React.useContext(NestedMenuContext);
+    const nestedMenuContext = React.useContext(NestedMenuContext)
+    const { openAndFocusFirstItem, onClose } = useMenuContext()
 
     const onKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
       props.onKeyDown?.(event);
+
+      console.log(nestedMenuContext)
       if (nestedMenuContext) {
-        const { descendants, focusedIndex, setFocusedIndex } = nestedMenuContext
+        const { focusedIndex, setFocusedIndex } = nestedMenuContext
         const map = {
-          27: () => {}, //esc
-          38: () => {
-            const prev = descendants.prevEnabled(focusedIndex)
-            if (prev) setFocusedIndex(prev.index)
+          37: () => {
+            onClose()
           }, // left
-          40: () => {
-            const next = descendants.nextEnabled(focusedIndex)
-            if (next) setFocusedIndex(next.index)
+          39: () => {
+            openAndFocusFirstItem()
+            // if (descendants) {
+            //   const next = descendants.nextEnabled(focusedIndex)
+            //   if (next) setFocusedIndex(next.index)
+            // }
           }, // right
         }
 

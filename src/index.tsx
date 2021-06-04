@@ -3,6 +3,7 @@ import * as React from "react";
 import { render } from "react-dom";
 
 import { Menu, MenuItem, MenuButton, NestedMenu } from "./nested-menu";
+import { defaultTheme } from './theme'
 import "./styles.css";
 
 const CePizdosMenu = React.forwardRef<HTMLButtonElement, {}>((props, ref) => (
@@ -61,11 +62,11 @@ const OtherNetworks = React.forwardRef<HTMLButtonElement, {}>((props, ref) => (
 const NetworksMenu = React.forwardRef<HTMLButtonElement, {}>((props, ref) => {
   return (
     <Menu placement="right-start">
-      <MenuButton ref={ref} {...props}>
+      <MenuButton>
         Other Networks
       </MenuButton>
       <MenuList>
-        {/* <MenuItem>Twitter</MenuItem>
+        <MenuItem>Twitter</MenuItem>
         <MenuItem
           onClick={() => {
             console.log("facebook");
@@ -73,8 +74,8 @@ const NetworksMenu = React.forwardRef<HTMLButtonElement, {}>((props, ref) => {
         >
           Facebook
         </MenuItem>
-        <NestedMenu as={OtherNetworks} />
-        <NestedMenu as={KurwaMenu} /> */}
+        <NestedMenu><OtherNetworks /></NestedMenu>
+        <NestedMenu><KurwaMenu /> </NestedMenu>
       </MenuList>
     </Menu>
   );
@@ -86,17 +87,18 @@ export const WithMenu = () => (
       Open menu
     </MenuButton>
     <MenuList>
-      {/* <MenuItem command="⌘T" onClick={() => console.log("newTab")}>
+      <MenuItem command="⌘T" onClick={() => console.log("newTab")}>
         New Tab
-      </MenuItem> */}
+      </MenuItem>
       <MenuItem command="⌘N">New Window</MenuItem>
       <MenuItem command="⌘⇧N">Open Closed Tab</MenuItem>
-      <NestedMenu as={NetworksMenu} />
+      <NestedMenu>
+        <NetworksMenu />
+      </NestedMenu>
       <MenuItem command="⌘O">Open File...</MenuItem>
     </MenuList>
   </Menu>
-);
-
+)
 function App() {
   return (
     <Box h="100%">
@@ -105,9 +107,10 @@ function App() {
   );
 }
 
+
 const rootElement = document.getElementById("root");
 render(
-  <ChakraProvider>
+  <ChakraProvider theme={defaultTheme}>
     <App />
   </ChakraProvider>,
   rootElement
