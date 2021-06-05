@@ -13,6 +13,7 @@ import {
   useMenuItem,
   MenuListProps,
 } from "@chakra-ui/react";
+import { ChevronRightIcon } from '@chakra-ui/icons';
 
 console.clear();
 
@@ -135,6 +136,7 @@ export const NestedMenu: React.FC<MenuProps> = (props) => {
       }}
     >
       <Menu {...props} isOpen={isOpen} onClose={onClose} onOpen={onOpen} />
+      <ChevronRightIcon />
     </chakra.div>
   )
 }
