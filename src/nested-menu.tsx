@@ -1,20 +1,20 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import {
   MenuProps,
   MenuItemProps,
   Menu as ChakraMenu,
   MenuItem as ChakraMenuItem,
+  MenuList as ChakraMenuList,
   MenuButton as ChakraMenuButton,
   useMenuContext,
   MenuButtonProps,
-  useMenuDescendantsContext,
   chakra,
   useStyles,
+  useMenuItem,
+  MenuListProps,
 } from "@chakra-ui/react";
 
 console.clear();
-
-type Descendants = ReturnType<typeof useMenuDescendantsContext>
 
 type NestedMenuContextProps = ReturnType<typeof useMenuContext>
 
@@ -54,73 +54,115 @@ export const MenuItem = React.forwardRef<HTMLButtonElement, MenuItemProps>(
   }
 );
 
-export const NestedMenu = React.forwardRef<HTMLButtonElement, MenuItemProps>(
-  (props, ref) => {
-    const styles = useStyles()
-    const rrr = React.useRef<HTMLButtonElement | null>(null)
+export const NestedMenu: React.FC<MenuProps> = (props) => {
+  const styles = useStyles()
+  const {
+    isOpen: isOpenProp,
+    onClose: onCloseProp,
+    onOpen: onOpenProp,
+    ...rest
+  } = props
+  const isControlled = isOpenProp !== undefined
+  const [isOpen, setIsOpen] = React.useState(isOpenProp ?? false)
+  const menuitemProps = useMenuItem({ ...rest, closeOnSelect: false })
 
-    useEffect(() => {
+  useEffect(() => {
+    if (isOpenProp !== undefined) {
+      setIsOpen(isOpenProp)
+    }
+  }, [isOpenProp])
 
-    }, [])
+  const onOpen = React.useCallback(() => {
+    if (!isControlled) {
+      setIsOpen(true)
+    }
+    onOpenProp?.()
+  }, [isControlled])
 
-    return <ChakraMenuItem as="div"
-      ref={(r) => {
-        ref && (typeof ref === "function" ? ref(r) : (ref.current = r))
-        rrr.current = r
-      }} closeOnSelect={false} {...props} sx={styles.nestedMenu} onFocus={() => {
-        if (rrr.current) {
-          // @ts-ignore
-          const shit = rrr.current.children[0].focus()
+  const onClose = React.useCallback(() => {
+    if (!isControlled) {
+      setIsOpen(false)
+    }
+    onCloseProp?.()
+  }, [isControlled])
 
+
+  const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    const map: any = {
+      37: () => { // FIXME key codes
+        onClose()
+
+        // to prevent close of all nested menus (only when target != currentTarget)
+        if (event.target !== event.currentTarget) {
+          event.stopPropagation()
         }
-        console.log('shit')
-        // shit.focus()
-    }}/>;
-  }
-);
-
-export const MenuButton = React.forwardRef<HTMLButtonElement, MenuButtonProps>(
-  (props, ref) => {
-    const nestedMenuContext = React.useContext(NestedMenuContext)
-    const { openAndFocusFirstItem, onClose } = useMenuContext()
-
-    const onKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
-      props.onKeyDown?.(event);
-
-      console.log(nestedMenuContext)
-      if (nestedMenuContext) {
-        const { focusedIndex, setFocusedIndex } = nestedMenuContext
-        const map = {
-          37: () => {
-            onClose()
-          }, // left
-          39: () => {
-            openAndFocusFirstItem()
-            // if (descendants) {
-            //   const next = descendants.nextEnabled(focusedIndex)
-            //   if (next) setFocusedIndex(next.index)
-            // }
-          }, // right
+      }, // left
+      39: onOpen, // right
+      32: () => {
+        if (event.target === event.currentTarget && !isOpen) {
+          onOpen()
         }
-
-        // @ts-ignore
-        map[event.keyCode]?.()
-        event.defaultPrevented = true;
-      }
+      },
+      13: onOpen, // enter
     }
 
+    const handler = map[event.keyCode]
+    if (handler) {
+      handler()
+      event.defaultPrevented = true;
+    }
+  }
+
+  return (
+    <chakra.div
+      sx={styles.nestedMenu}
+      {...menuitemProps}
+      onKeyDown={onKeyDown}
+      __css={{
+        textDecoration: "none",
+        color: "inherit",
+        userSelect: "none",
+        display: "flex",
+        width: "100%",
+        alignItems: "center",
+        textAlign: "start",
+        flex: "0 0 auto",
+        outline: 0,
+        ...styles.item,
+      }}
+      onClick={(e) => (e.defaultPrevented = true)}
+    >
+      <Menu {...props} isOpen={isOpen} onClose={onClose} onOpen={onOpen} />
+    </chakra.div>
+  )
+}
+
+
+// TODO remove
+export const MenuButton = React.forwardRef<HTMLButtonElement, MenuButtonProps>(
+  (props, ref) => {
     return (
-      <ChakraMenuButton
-        ref={ref}
-        {...props}
-        // onKeyDown={onKeyDown}
-        onKeyUp={() => {
-          console.log('shittttt')
-        }}
-        onKeyPress={() => {
-          console.log('shittttt             2222222222222222222222222222222')
-        }}
-      />
+      <ChakraMenuButton ref={ref} {...props} />
     );
   }
 );
+
+export const MenuList: React.FC<MenuListProps> = (props) => {
+  const { isOpen, openAndFocusFirstItem } = useMenuContext()
+  const parentMenu= React.useContext(NestedMenuContext);
+  const [focusedIndex, setFocusedIndex] = React.useState(-1) // need to store focus index of parent menu
+
+  useEffect(() => {
+    if (parentMenu && isOpen) {
+      setFocusedIndex(parentMenu.focusedIndex)
+      parentMenu.setFocusedIndex(-1)
+      openAndFocusFirstItem()
+    }
+
+    if (parentMenu && !isOpen) {
+      parentMenu.setFocusedIndex(focusedIndex)
+    }
+  }, [isOpen])
+
+  return <ChakraMenuList {...props} />
+}

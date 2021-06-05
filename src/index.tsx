@@ -1,101 +1,87 @@
-import { Box, Button, ChakraProvider, MenuList, MenuButton as ChakraMenuButton } from "@chakra-ui/react";
+import { Box, Button, ChakraProvider } from "@chakra-ui/react";
 import * as React from "react";
 import { render } from "react-dom";
 
-import { Menu, MenuItem, MenuButton, NestedMenu } from "./nested-menu";
+import { Menu, MenuItem, MenuButton, NestedMenu, MenuList } from "./nested-menu";
 import { defaultTheme } from './theme'
 import "./styles.css";
 
 const CePizdosMenu = React.forwardRef<HTMLButtonElement, {}>((props, ref) => (
-  <Menu placement="right-start">
+  <NestedMenu placement="right-start">
     <MenuButton ref={ref} {...props}>
       Ce pizdos
     </MenuButton>
     <MenuList>
-      <MenuItem
-        onClick={() => {
-          console.log("chiki briki");
-        }}
-      >
+      <MenuItem onClick={() => console.log("chiki briki")}>
         chiki briki
       </MenuItem>
     </MenuList>
-  </Menu>
+  </NestedMenu>
 ));
 
 const KurwaMenu = React.forwardRef<HTMLButtonElement, {}>((props, ref) => (
-  <Menu placement="right-start">
+  <NestedMenu placement="right-start">
     <MenuButton ref={ref} {...props}>
       Kurwa
     </MenuButton>
     <MenuList>
-      <MenuItem
-        onClick={() => {
-          console.log("twitch");
-        }}
-      >
+      <MenuItem onClick={() => console.log("Pen'onsi")}>
         Pen'onsi
       </MenuItem>
-      <NestedMenu as={CePizdosMenu} />
+      <CePizdosMenu />
     </MenuList>
-  </Menu>
+  </NestedMenu>
 ));
 
 const OtherNetworks = React.forwardRef<HTMLButtonElement, {}>((props, ref) => (
-  <Menu placement="right-start">
+  <NestedMenu placement="right-start">
     <MenuButton ref={ref} {...props}>
       Other
     </MenuButton>
     <MenuList>
-      <MenuItem
-        onClick={() => {
-          console.log("twitch");
-        }}
-      >
+      <MenuItem onClick={() => console.log("Twitch")}>
         Twitch
       </MenuItem>
-      <MenuItem>Pinterest</MenuItem>
+      <MenuItem onClick={() => console.log("Pinterest")}>
+        Pinterest
+      </MenuItem>
     </MenuList>
-  </Menu>
+  </NestedMenu>
 ));
 
 const NetworksMenu = React.forwardRef<HTMLButtonElement, {}>((props, ref) => {
   return (
-    <Menu placement="right-start">
+    <NestedMenu placement="right-start">
       <MenuButton>
         Other Networks
       </MenuButton>
       <MenuList>
-        <MenuItem>Twitter</MenuItem>
-        <MenuItem
-          onClick={() => {
-            console.log("facebook");
-          }}
-        >
+        <MenuItem onClick={() => console.log("Twitter")}>
+          Twitter
+        </MenuItem>
+        <MenuItem onClick={() => console.log("Facebook")}>
           Facebook
         </MenuItem>
-        <NestedMenu><OtherNetworks /></NestedMenu>
-        <NestedMenu><KurwaMenu /> </NestedMenu>
+        <OtherNetworks />
+        <KurwaMenu />
       </MenuList>
-    </Menu>
+    </NestedMenu>
   );
 });
 
 export const WithMenu = () => (
   <Menu>
-    <ChakraMenuButton as={Button}>
+    <MenuButton as={Button}>
       Open menu
-    </ChakraMenuButton>
+    </MenuButton>
     <MenuList>
       <MenuItem command="⌘T" onClick={() => console.log("newTab")}>
         New Tab
       </MenuItem>
-      <MenuItem command="⌘N">New Window</MenuItem>
-      <MenuItem command="⌘⇧N">Open Closed Tab</MenuItem>
-      <NestedMenu>
-        <NetworksMenu />
-      </NestedMenu>
-      <MenuItem command="⌘O">Open File...</MenuItem>
+      <MenuItem command="⌘N" onClick={() => console.log("newWindow")}>New Window</MenuItem>
+      <MenuItem command="⌘⇧N" onClick={() => console.log("open closed tab")}>Open Closed Tab</MenuItem>
+      <NetworksMenu />
+      <MenuItem command="⌘O" onClick={() => console.log("open file")}>Open File...</MenuItem>
     </MenuList>
   </Menu>
 )
