@@ -50,7 +50,8 @@ export const MenuItem = React.forwardRef<HTMLButtonElement, MenuItemProps>(
       onClick?.(event);
     };
 
-    return <ChakraMenuItem ref={ref} {...props} onClick={handleClick} />;
+    // TODO: if as="div" missed - Space not work for sub menu. It is chakra behavior, and it is the easiest way to fix
+    return <ChakraMenuItem as="div" ref={ref} {...props} onClick={handleClick} />;
   }
 );
 
@@ -87,6 +88,12 @@ export const NestedMenu: React.FC<MenuProps> = (props) => {
   }, [isControlled])
 
 
+  const onClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (event.target === event.currentTarget && !isOpen) {
+      onOpen()
+    }
+  }
+
   const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     const map: any = {
       37: () => { // FIXME key codes
@@ -98,11 +105,6 @@ export const NestedMenu: React.FC<MenuProps> = (props) => {
         }
       }, // left
       39: onOpen, // right
-      32: () => {
-        if (event.target === event.currentTarget && !isOpen) {
-          onOpen()
-        }
-      },
       13: onOpen, // enter
     }
 
@@ -118,6 +120,7 @@ export const NestedMenu: React.FC<MenuProps> = (props) => {
       sx={styles.nestedMenu}
       {...menuitemProps}
       onKeyDown={onKeyDown}
+      onClick={onClick}
       __css={{
         textDecoration: "none",
         color: "inherit",
@@ -130,7 +133,6 @@ export const NestedMenu: React.FC<MenuProps> = (props) => {
         outline: 0,
         ...styles.item,
       }}
-      onClick={(e) => (e.defaultPrevented = true)}
     >
       <Menu {...props} isOpen={isOpen} onClose={onClose} onOpen={onOpen} />
     </chakra.div>
