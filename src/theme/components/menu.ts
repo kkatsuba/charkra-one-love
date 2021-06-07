@@ -1,6 +1,6 @@
-const parts = ['nestedMenu']
+const parts = ['subMenu']
 
-const nestedMenu = () =>{
+const subMenu = () =>{
   return {
     '& > button': {
       w: '100%',
@@ -19,7 +19,7 @@ const nestedMenu = () =>{
 }
 
 const baseStyle = (props: Record<string, any>) => ({
-  nestedMenu: nestedMenu(),
+  subMenu: subMenu(),
 })
 
 export default {

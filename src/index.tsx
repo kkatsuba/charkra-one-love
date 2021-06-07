@@ -2,12 +2,12 @@ import { Box, Button, ChakraProvider, MenuButton } from "@chakra-ui/react";
 import * as React from "react";
 import { render } from "react-dom";
 
-import { Menu, MenuItem, NestedMenu, MenuList } from "./nested-menu";
+import { Menu, MenuItem, SubMenu, MenuList } from "./nested-menu";
 import { defaultTheme } from './theme'
 import "./styles.css";
 
 const CePizdosMenu = React.forwardRef<HTMLButtonElement, {}>((props, ref) => (
-  <NestedMenu placement="right-start">
+  <SubMenu placement="right-start">
     <MenuButton ref={ref} {...props}>
       Ce pizdos
     </MenuButton>
@@ -16,11 +16,11 @@ const CePizdosMenu = React.forwardRef<HTMLButtonElement, {}>((props, ref) => (
         chiki briki
       </MenuItem>
     </MenuList>
-  </NestedMenu>
+  </SubMenu>
 ));
 
 const KurwaMenu = React.forwardRef<HTMLButtonElement, {}>((props, ref) => (
-  <NestedMenu placement="right-start">
+  <SubMenu placement="right-start">
     <MenuButton ref={ref} {...props}>
       Kurwa
     </MenuButton>
@@ -30,11 +30,11 @@ const KurwaMenu = React.forwardRef<HTMLButtonElement, {}>((props, ref) => (
       </MenuItem>
       <CePizdosMenu />
     </MenuList>
-  </NestedMenu>
+  </SubMenu>
 ));
 
 const OtherNetworks = React.forwardRef<HTMLButtonElement, {}>((props, ref) => (
-  <NestedMenu placement="right-start">
+  <SubMenu placement="right-start">
     <MenuButton ref={ref} {...props}>
       Other
     </MenuButton>
@@ -46,12 +46,12 @@ const OtherNetworks = React.forwardRef<HTMLButtonElement, {}>((props, ref) => (
         Pinterest
       </MenuItem>
     </MenuList>
-  </NestedMenu>
+  </SubMenu>
 ));
 
 const NetworksMenu = React.forwardRef<HTMLButtonElement, {}>((props, ref) => {
   return (
-    <NestedMenu placement="right-start">
+    <SubMenu placement="right-start">
       <MenuButton>
         Other Networks
       </MenuButton>
@@ -65,7 +65,7 @@ const NetworksMenu = React.forwardRef<HTMLButtonElement, {}>((props, ref) => {
         <OtherNetworks />
         <KurwaMenu />
       </MenuList>
-    </NestedMenu>
+    </SubMenu>
   );
 });
 

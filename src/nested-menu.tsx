@@ -5,49 +5,72 @@ import {
   Menu as ChakraMenu,
   MenuItem as ChakraMenuItem,
   MenuList as ChakraMenuList,
-  MenuButton as ChakraMenuButton,
   useMenuContext,
-  MenuButtonProps,
   chakra,
   useStyles,
   useMenuItem,
   MenuListProps,
+  MenuDescendantsProvider,
+  MenuProvider,
+  omitThemingProps,
+  useMenu,
 } from "@chakra-ui/react";
 import { ChevronRightIcon } from '@chakra-ui/icons';
 
-console.clear();
+class RootMenu {
+  menus = new Map<string, ReturnType<typeof useMenuContext>>()
 
-type NestedMenuContextProps = ReturnType<typeof useMenuContext>
+  closeAllMenus() {
+    Array.from(this.menus).forEach(([,menu]) => menu.onClose())
+  }
 
-const NestedMenuContext = React.createContext<NestedMenuContextProps | undefined>(undefined);
+  registerMenu(menuId: string, parentMenu: ReturnType<typeof useMenuContext>) {
+    this.menus.set(menuId, parentMenu)
+  }
+}
+
+const RootMenuContext = React.createContext<RootMenu | undefined>(undefined)
 
 export const Menu: React.FC<MenuProps> = (props) => {
-  const nestedMenuContext = React.useContext(NestedMenuContext);
-  const parentMenuContext = useMenuContext();
-  const context = (nestedMenuContext || parentMenuContext) && {
-    ...parentMenuContext,
-    onClose: () => {
-      nestedMenuContext && nestedMenuContext.onClose();
-      parentMenuContext?.onClose();
+  const root = React.useMemo(() => new RootMenu(), [])
+
+  useEffect(() => {
+    const handleClose = (event: MouseEvent) => {
+      if (event.target) {
+        const clickOnMenu = Array.from(root.menus).some(([, menu]) => {
+          // @ts-ignore
+          return menu.menuRef.current?.contains(event.target)
+        })
+
+        const clickOnButton = Array.from(root.menus).some(([, menu]) => {
+          // @ts-ignore
+          return menu.buttonRef.current?.contains(event.target)
+        })
+
+        if (!clickOnMenu && !clickOnButton) {
+          root.closeAllMenus()
+        }
+      }
     }
-  };
+
+    document.addEventListener('click', handleClose)
+    return () => document.removeEventListener('click', handleClose)
+  }, [])
 
   return (
-    <NestedMenuContext.Provider value={context}>
+    <RootMenuContext.Provider value={root}>
       <ChakraMenu {...props} />
-    </NestedMenuContext.Provider>
+    </RootMenuContext.Provider>
   );
 }
 
-
 export const MenuItem = React.forwardRef<HTMLButtonElement, MenuItemProps>(
   (props, ref) => {
-    const { onClose, closeOnSelect } = React.useContext(NestedMenuContext) || {};
+    const root = React.useContext(RootMenuContext)
     const { onClick } = props;
 
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-      // close all sub-menus when click on item
-      closeOnSelect && onClose?.();
+      root?.closeAllMenus();
       onClick?.(event);
     };
 
@@ -61,17 +84,16 @@ export const MenuItem = React.forwardRef<HTMLButtonElement, MenuItemProps>(
   }
 );
 
-export const NestedMenu: React.FC<MenuProps> = (props) => {
-  const styles = useStyles()
+const useMenuToggle = (options: MenuProps) => {
   const {
     isOpen: isOpenProp,
     onClose: onCloseProp,
     onOpen: onOpenProp,
-    ...rest
-  } = props
+  } = options
+
   const isControlled = isOpenProp !== undefined
   const [isOpen, setIsOpen] = React.useState(isOpenProp ?? false)
-  const menuitemProps = useMenuItem({ ...rest, closeOnSelect: false })
+
   useEffect(() => {
     if (isOpenProp !== undefined) {
       setIsOpen(isOpenProp)
@@ -92,6 +114,37 @@ export const NestedMenu: React.FC<MenuProps> = (props) => {
     onCloseProp?.()
   }, [isControlled])
 
+  return {
+    isOpen,
+    onClose,
+    onOpen,
+  }
+}
+
+const useSuBMenu = (props: MenuProps) => {
+  const parentMenu = useMenuContext()
+  const toggleMenuProps = useMenuToggle(props)
+  const { descendants, ...ctx } = useMenu({
+    ...omitThemingProps(props),
+    ...toggleMenuProps,
+  })
+  const context = React.useMemo(() => ctx, [ctx])
+  const root = React.useContext(RootMenuContext)
+
+  useEffect(() => {
+    if (parentMenu) {
+      root?.registerMenu(context.menuId, parentMenu)
+    }
+  }, [context, parentMenu])
+
+  return { descendants, context }
+}
+
+export const SubMenu: React.FC<MenuProps> = (props) => {
+  const styles = useStyles()
+  const menuitemProps = useMenuItem({ closeOnSelect: false })
+  const { context, descendants } = useSuBMenu(props)
+  const { isOpen, onClose, onOpen } = context
 
   const onClick = (event: React.MouseEvent<HTMLDivElement>) => {
     if (event.target === event.currentTarget && !isOpen) {
@@ -104,7 +157,7 @@ export const NestedMenu: React.FC<MenuProps> = (props) => {
       ArrowLeft: () => {
         onClose()
 
-        // to prevent close of all nested menus (only when target != currentTarget)
+        // to prevent close of all sub menus (only when target != currentTarget)
         if (event.target !== event.currentTarget) {
           event.stopPropagation()
         }
@@ -123,21 +176,25 @@ export const NestedMenu: React.FC<MenuProps> = (props) => {
   return (
     <chakra.div
       {...menuitemProps}
-      sx={styles.nestedMenu}
+      sx={styles.subMenu}
       __css={styles.item}
       data-active={isOpen ? '' : undefined}
       onKeyDown={onKeyDown}
       onClick={onClick}
     >
-      <Menu {...props} isOpen={isOpen} onClose={onClose} onOpen={onOpen} />
+      <MenuDescendantsProvider value={descendants}>
+        <MenuProvider value={context}>
+          {props.children}
+        </MenuProvider>
+      </MenuDescendantsProvider>
       <ChevronRightIcon />
     </chakra.div>
   )
 }
 
 export const MenuList: React.FC<MenuListProps> = (props) => {
-  const { isOpen, openAndFocusFirstItem } = useMenuContext()
-  const parentMenu= React.useContext(NestedMenuContext);
+  const { menuId, isOpen, openAndFocusFirstItem } = useMenuContext()
+  const parentMenu= React.useContext(RootMenuContext)?.menus.get(menuId)
   const [focusedIndex, setFocusedIndex] = React.useState(-1) // need to store focus index of parent menu
 
   useEffect(() => {
