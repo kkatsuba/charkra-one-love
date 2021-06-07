@@ -1,8 +1,8 @@
-import { Box, Button, ChakraProvider } from "@chakra-ui/react";
+import { Box, Button, ChakraProvider, MenuButton } from "@chakra-ui/react";
 import * as React from "react";
 import { render } from "react-dom";
 
-import { Menu, MenuItem, MenuButton, NestedMenu, MenuList } from "./nested-menu";
+import { Menu, MenuItem, NestedMenu, MenuList } from "./nested-menu";
 import { defaultTheme } from './theme'
 import "./styles.css";
 

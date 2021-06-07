@@ -42,17 +42,22 @@ export const Menu: React.FC<MenuProps> = (props) => {
 
 export const MenuItem = React.forwardRef<HTMLButtonElement, MenuItemProps>(
   (props, ref) => {
-    const { onClose, closeOnSelect } =
-      React.useContext(NestedMenuContext) || {};
+    const { onClose, closeOnSelect } = React.useContext(NestedMenuContext) || {};
     const { onClick } = props;
 
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+      // close all sub-menus when click on item
       closeOnSelect && onClose?.();
       onClick?.(event);
     };
 
-    // TODO: if as="div" missed - Space not work for sub menu. It is chakra behavior, and it is the easiest way to fix
-    return <ChakraMenuItem as="div" ref={ref} {...props} onClick={handleClick} />;
+    const onKeyUp = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+      if (event.key === ' ') { // allow to select sub-menu item with space
+        event.stopPropagation()
+      }
+    }
+
+    return <ChakraMenuItem ref={ref} {...props} onClick={handleClick} onKeyUpCapture={onKeyUp} />
   }
 );
 
@@ -67,7 +72,6 @@ export const NestedMenu: React.FC<MenuProps> = (props) => {
   const isControlled = isOpenProp !== undefined
   const [isOpen, setIsOpen] = React.useState(isOpenProp ?? false)
   const menuitemProps = useMenuItem({ ...rest, closeOnSelect: false })
-
   useEffect(() => {
     if (isOpenProp !== undefined) {
       setIsOpen(isOpenProp)
@@ -96,20 +100,20 @@ export const NestedMenu: React.FC<MenuProps> = (props) => {
   }
 
   const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    const map: any = {
-      37: () => { // FIXME key codes
+    const keysMap: any = {
+      ArrowLeft: () => {
         onClose()
 
         // to prevent close of all nested menus (only when target != currentTarget)
         if (event.target !== event.currentTarget) {
           event.stopPropagation()
         }
-      }, // left
-      39: onOpen, // right
-      13: onOpen, // enter
+      },
+      ArrowRight: onOpen,
+      Enter: onOpen,
     }
 
-    const handler = map[event.keyCode]
+    const handler = keysMap[event.key]
     if (handler) {
       handler()
       event.defaultPrevented = true;
@@ -118,38 +122,18 @@ export const NestedMenu: React.FC<MenuProps> = (props) => {
 
   return (
     <chakra.div
-      sx={styles.nestedMenu}
       {...menuitemProps}
+      sx={styles.nestedMenu}
+      __css={styles.item}
+      data-active={isOpen ? '' : undefined}
       onKeyDown={onKeyDown}
       onClick={onClick}
-      __css={{
-        textDecoration: "none",
-        color: "inherit",
-        userSelect: "none",
-        display: "flex",
-        width: "100%",
-        alignItems: "center",
-        textAlign: "start",
-        flex: "0 0 auto",
-        outline: 0,
-        ...styles.item,
-      }}
     >
       <Menu {...props} isOpen={isOpen} onClose={onClose} onOpen={onOpen} />
       <ChevronRightIcon />
     </chakra.div>
   )
 }
-
-
-// TODO remove
-export const MenuButton = React.forwardRef<HTMLButtonElement, MenuButtonProps>(
-  (props, ref) => {
-    return (
-      <ChakraMenuButton ref={ref} {...props} />
-    );
-  }
-);
 
 export const MenuList: React.FC<MenuListProps> = (props) => {
   const { isOpen, openAndFocusFirstItem } = useMenuContext()
