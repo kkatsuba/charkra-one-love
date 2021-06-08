@@ -17,49 +17,102 @@ import {
 } from "@chakra-ui/react";
 import { ChevronRightIcon } from '@chakra-ui/icons';
 
+type MegaMap = {
+  [key: string]: {
+    self: ReturnType<typeof useMenuContext>,
+    parent: ReturnType<typeof useMenuContext>,
+    children: Map<string, ReturnType<typeof useMenuContext>>,
+  };
+}
+
 class RootMenu {
-  menus = new Map<string, ReturnType<typeof useMenuContext>>()
+  menusMap: MegaMap = {}
 
   closeAllMenus() {
-    Array.from(this.menus).forEach(([,menu]) => menu.onClose())
+    Object.values(this.menusMap).forEach((menuInfo) => {
+      menuInfo.self.onClose()
+      menuInfo.parent.onClose()
+    })
   }
 
-  registerMenu(menuId: string, parentMenu: ReturnType<typeof useMenuContext>) {
-    this.menus.set(menuId, parentMenu)
+  registerMenu(self: ReturnType<typeof useMenuContext>, parent: ReturnType<typeof useMenuContext>) {
+    this.menusMap[self.menuId] = {
+      self,
+      parent,
+      children: this.menusMap[self.menuId]?.children || new Map()
+    }
+
+    if (this.menusMap[parent.menuId]) {
+      this.menusMap[parent.menuId].children.set(self.menuId, self)
+    }
+  }
+
+  findAllByParent(parentMenuId: string): string[] {
+    const subMenus = this.menusMap[parentMenuId] ? Array.from(this.menusMap[parentMenuId].children) : []
+
+    return subMenus.reduce<string[]>((res, [menuId]) => {
+      if (this.menusMap[menuId]) {
+        return res.concat(menuId, ...this.findAllByParent(menuId))
+      }
+      return res.concat(menuId)
+    }, [])
+  }
+
+  closeByParent(parentMenuId: string) {
+    const childIds = this.findAllByParent(parentMenuId)
+    childIds.forEach((id) => {
+      const menu = this.menusMap[id]
+      menu?.self.isOpen && menu?.self.onClose()
+    })
+  }
+
+  getMenu(menuId: string) {
+    return this.menusMap[menuId]
   }
 }
 
 const RootMenuContext = React.createContext<RootMenu | undefined>(undefined)
 
+const useRootMenuContext = () => {
+  const context = React.useContext(RootMenuContext)
+  if (!context) {
+    throw new Error('Root menu not provided')
+  }
+
+  return context
+}
+
 export const Menu: React.FC<MenuProps> = (props) => {
   const root = React.useMemo(() => new RootMenu(), [])
+  const ref = React.useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const handleClose = (event: MouseEvent) => {
-      if (event.target) {
-        const clickOnMenu = Array.from(root.menus).some(([, menu]) => {
-          // @ts-ignore
-          return menu.menuRef.current?.contains(event.target)
-        })
+    const forceClose = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        root.closeAllMenus()
+      }
+    }
 
-        const clickOnButton = Array.from(root.menus).some(([, menu]) => {
-          // @ts-ignore
-          return menu.buttonRef.current?.contains(event.target)
-        })
-
-        if (!clickOnMenu && !clickOnButton) {
-          root.closeAllMenus()
-        }
+    const handleClose = async (event: MouseEvent | KeyboardEvent) => {
+      // @ts-ignore
+      if (event.target && !ref.current?.contains(event.target)) {
+        root.closeAllMenus()
       }
     }
 
     document.addEventListener('click', handleClose)
-    return () => document.removeEventListener('click', handleClose)
+    document.addEventListener('keyup', forceClose)
+    return () => {
+      document.removeEventListener('click', handleClose)
+      document.removeEventListener('keyup', forceClose)
+    }
   }, [])
 
   return (
     <RootMenuContext.Provider value={root}>
-      <ChakraMenu {...props} />
+      <chakra.div ref={ref}>
+        <ChakraMenu {...props} />
+      </chakra.div>
     </RootMenuContext.Provider>
   );
 }
@@ -93,6 +146,14 @@ const useMenuToggle = (options: MenuProps) => {
 
   const isControlled = isOpenProp !== undefined
   const [isOpen, setIsOpen] = React.useState(isOpenProp ?? false)
+  const root = React.useContext(RootMenuContext)
+  const parentMenu = useMenuContext()
+
+  const closeAllSubMenus = () => {
+    if (root && parentMenu) {
+      root.closeByParent(parentMenu.menuId)
+    }
+  }
 
   useEffect(() => {
     if (isOpenProp !== undefined) {
@@ -101,11 +162,12 @@ const useMenuToggle = (options: MenuProps) => {
   }, [isOpenProp])
 
   const onOpen = React.useCallback(() => {
-    if (!isControlled) {
+    if (!isControlled && !isOpen) {
+      closeAllSubMenus()
       setIsOpen(true)
     }
     onOpenProp?.()
-  }, [isControlled])
+  }, [isControlled, isOpen])
 
   const onClose = React.useCallback(() => {
     if (!isControlled) {
@@ -131,9 +193,13 @@ const useSuBMenu = (props: MenuProps) => {
   const context = React.useMemo(() => ctx, [ctx])
   const root = React.useContext(RootMenuContext)
 
+  if (parentMenu.menuId.includes('undefined')) {
+    console.log('===>>>', parentMenu, parentMenu.buttonRef.current?.innerHTML)
+  }
+
   useEffect(() => {
-    if (parentMenu) {
-      root?.registerMenu(context.menuId, parentMenu)
+    if (context && parentMenu) {
+      root?.registerMenu(context, parentMenu)
     }
   }, [context, parentMenu])
 
@@ -194,7 +260,7 @@ export const SubMenu: React.FC<MenuProps> = (props) => {
 
 export const MenuList: React.FC<MenuListProps> = (props) => {
   const { menuId, isOpen, openAndFocusFirstItem } = useMenuContext()
-  const parentMenu= React.useContext(RootMenuContext)?.menus.get(menuId)
+  const { parent: parentMenu } = useRootMenuContext().getMenu(menuId) ?? {}
   const [focusedIndex, setFocusedIndex] = React.useState(-1) // need to store focus index of parent menu
 
   useEffect(() => {

@@ -7,7 +7,7 @@ import { defaultTheme } from './theme'
 import "./styles.css";
 
 const CePizdosMenu = React.forwardRef<HTMLButtonElement, {}>((props, ref) => (
-  <SubMenu placement="right-start">
+  <SubMenu placement="right-start" data-id="Ce pizdos">
     <MenuButton ref={ref} {...props}>
       Ce pizdos
     </MenuButton>
@@ -20,7 +20,7 @@ const CePizdosMenu = React.forwardRef<HTMLButtonElement, {}>((props, ref) => (
 ));
 
 const KurwaMenu = React.forwardRef<HTMLButtonElement, {}>((props, ref) => (
-  <SubMenu placement="right-start">
+  <SubMenu placement="right-start" data-id="Kurwa">
     <MenuButton ref={ref} {...props}>
       Kurwa
     </MenuButton>
@@ -34,7 +34,7 @@ const KurwaMenu = React.forwardRef<HTMLButtonElement, {}>((props, ref) => (
 ));
 
 const OtherNetworks = React.forwardRef<HTMLButtonElement, {}>((props, ref) => (
-  <SubMenu placement="right-start">
+  <SubMenu placement="right-start" data-id="Other">
     <MenuButton ref={ref} {...props}>
       Other
     </MenuButton>
@@ -51,7 +51,7 @@ const OtherNetworks = React.forwardRef<HTMLButtonElement, {}>((props, ref) => (
 
 const NetworksMenu = React.forwardRef<HTMLButtonElement, {}>((props, ref) => {
   return (
-    <SubMenu placement="right-start">
+    <SubMenu placement="right-start" data-id="Other Networks">
       <MenuButton>
         Other Networks
       </MenuButton>
@@ -81,6 +81,7 @@ export const WithMenu = () => (
       <MenuItem command="⌘N" onClick={() => console.log("newWindow")}>New Window</MenuItem>
       <MenuItem command="⌘⇧N" onClick={() => console.log("open closed tab")}>Open Closed Tab</MenuItem>
       <NetworksMenu />
+      <OtherNetworks />
       <MenuItem command="⌘O" onClick={() => console.log("open file")}>Open File...</MenuItem>
     </MenuList>
   </Menu>
